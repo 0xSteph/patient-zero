@@ -94,6 +94,22 @@
       "references": [
         "https://www.stepsecurity.io/blog/mini-shai-hulud-is-back-a-self-spreading-supply-chain-attack-hits-the-npm-ecosystem"
       ]
+    },
+    "mcp-heuristics": {
+      "display_name": "MCP server heuristics",
+      "description": "Heuristic patterns for AI-agent MCP server configurations that are suspicious by structure (not by attribution). Each indicator here flags a pattern that warrants verification, not a confirmed-malicious server. See docs/MCP-IOC-GUIDE.md for context and how to contribute confirmed-malicious entries.",
+      "first_observed": "2025-12-01",
+      "ecosystems": ["npm", "pypi"],
+      "ioc_class_summary": "mcp",
+      "primary_external_source": {
+        "name": "patient-zero MCP IoC contributor guide",
+        "url": "https://github.com/0xSteph/patient-zero/blob/main/docs/MCP-IOC-GUIDE.md"
+      },
+      "active_threat": true,
+      "destructive_failsafe": false,
+      "references": [
+        "https://github.com/0xSteph/patient-zero/blob/main/docs/MCP-IOC-GUIDE.md"
+      ]
     }
   },
   "indicators": [
@@ -178,6 +194,96 @@
           "Verify you did NOT create the matching repo(s)",
           "If unfamiliar, archive or delete the repo from the GitHub web UI (do not use the gh CLI on the affected machine)",
           "Audit recent activity at https://github.com/settings/security-log"
+        ],
+        "commands": []
+      }
+    },
+    {
+      "id": "PZ-mcp-heur-typosquat-001",
+      "type": "mcp",
+      "attack_family": "mcp-heuristics",
+      "severity": "medium",
+      "first_seen": "2025-12-01",
+      "last_updated": "2026-05-14",
+      "source": "manual",
+      "description": "Typosquat of the official @modelcontextprotocol/* scope. Names resembling the official scope but published from a different scope are a known attack vector for MCP supply-chain compromises.",
+      "references": [
+        "https://github.com/0xSteph/patient-zero/blob/main/docs/MCP-IOC-GUIDE.md"
+      ],
+      "mcp_server_names": [],
+      "mcp_server_urls": [],
+      "config_path_patterns": [],
+      "config_content_patterns": [
+        "@modelcontextprotocols/",
+        "@modelcontxtprotocol/",
+        "@modelcontextprotocl/",
+        "@modelcontextprotocol-helper/",
+        "@modelcontextprotocol-tools/"
+      ],
+      "platforms": ["all"],
+      "remediation": {
+        "what_to_do": [
+          "Verify the MCP server package is from the legitimate @modelcontextprotocol/ scope (no plural, no extra letters, no helper/tools suffix)",
+          "Cross-check the official server list at https://github.com/modelcontextprotocol/servers",
+          "If the typosquat package was actually run by your agent: rotate any credentials the server had access to and audit recent agent sessions"
+        ],
+        "commands": ["claude mcp list", "cursor --mcp list"]
+      }
+    },
+    {
+      "id": "PZ-mcp-heur-non-https-001",
+      "type": "mcp",
+      "attack_family": "mcp-heuristics",
+      "severity": "medium",
+      "first_seen": "2025-12-01",
+      "last_updated": "2026-05-14",
+      "source": "manual",
+      "description": "MCP server configured to communicate over plaintext HTTP. There is no legitimate reason for a remote MCP endpoint to use http:// instead of https://; the traffic is tamperable in transit.",
+      "references": [
+        "https://github.com/0xSteph/patient-zero/blob/main/docs/MCP-IOC-GUIDE.md"
+      ],
+      "mcp_server_names": [],
+      "mcp_server_urls": ["^http://[^/]+"],
+      "config_path_patterns": [],
+      "config_content_patterns": [],
+      "platforms": ["all"],
+      "remediation": {
+        "what_to_do": [
+          "Switch the configured URL to https:// if the server supports it",
+          "If the server does not support TLS, remove it from your MCP config — there is no good reason to expose an agent to a tamperable transport",
+          "Audit recent agent sessions for unexpected tool calls or data movement"
+        ],
+        "commands": []
+      }
+    },
+    {
+      "id": "PZ-mcp-heur-sensitive-env-001",
+      "type": "mcp",
+      "attack_family": "mcp-heuristics",
+      "severity": "low",
+      "first_seen": "2025-12-01",
+      "last_updated": "2026-05-14",
+      "source": "manual",
+      "description": "MCP server configuration passes a sensitive credential (GITHUB_TOKEN, NPM_TOKEN, AWS_SECRET_ACCESS_KEY, OPENAI_API_KEY) in its env block. This can be intentional and legitimate (e.g. a GitHub MCP server requires a token), but it means a compromised version of the server has direct access to that credential. Verify the server is trusted.",
+      "references": [
+        "https://github.com/0xSteph/patient-zero/blob/main/docs/MCP-IOC-GUIDE.md"
+      ],
+      "mcp_server_names": [],
+      "mcp_server_urls": [],
+      "config_path_patterns": [],
+      "config_content_patterns": [
+        "\"GITHUB_TOKEN\"",
+        "\"NPM_TOKEN\"",
+        "\"AWS_SECRET_ACCESS_KEY\"",
+        "\"OPENAI_API_KEY\"",
+        "\"ANTHROPIC_API_KEY\""
+      ],
+      "platforms": ["all"],
+      "remediation": {
+        "what_to_do": [
+          "Confirm you trust the MCP server package source and version that is receiving this credential",
+          "Prefer scoped tokens with minimum-required permissions (e.g. read-only) over full-access tokens",
+          "Watch for unexpected use of the credential in your provider's audit log"
         ],
         "commands": []
       }

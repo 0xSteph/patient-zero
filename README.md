@@ -1,6 +1,6 @@
 # patient-zero
 
-Scans Node, Python, and AI-agent configs for indicators of compromise from npm and PyPI supply-chain attacks (Sept 2025 – present).
+Scans Node, Python, and AI-agent configs for indicators of compromise from npm and PyPI supply-chain attacks (Sept 2025 – present). Triage in 30 seconds, block malicious installs before postinstall runs, or wire it into your CI — same IoC database, three modes, one command.
 
 [![npm](https://img.shields.io/npm/v/patient-zero?style=flat-square)](https://www.npmjs.com/package/patient-zero)
 [![downloads](https://img.shields.io/npm/dw/patient-zero?style=flat-square)](https://www.npmjs.com/package/patient-zero)
@@ -39,39 +39,59 @@ Scanned 1 lockfiles · 234 processes · 2 MCP configs · 0 repos · 0 paths chec
 
 </details>
 
-## Install
+## Three ways to use it
+
+### 1. On-demand triage — when the news breaks
 
 ```sh
 npx patient-zero@latest
 ```
 
-That's it. No global install, no signup, no config. Runs against the current directory.
+No global install, no signup, no config. Runs against the current directory. Use this when chalk / axios / the latest Shai-Hulud variant hits Hacker News and you need a fast yes/no on whether your machine is affected.
 
-Pin a version in CI:
+### 2. Install-time blocking — catch malware *before* it runs
 
 ```sh
-npx patient-zero@0.1.0
+npx patient-zero@latest install <package>
 ```
+
+Resolves the proposed install tree in a sandboxed temp directory, cross-references every transitive dependency against the IoC database, and refuses to proceed if any indicator matches. **Postinstall scripts never execute.** This is the most valuable single feature for the agent era — your AI agent installs things on your behalf; you don't see every install; this catches it.
+
+### 3. Continuous CI — every commit, every PR
+
+```yaml
+- uses: 0xSteph/patient-zero@v0.2
+  with:
+    fail-on: medium
+```
+
+Drops into any GitHub Actions workflow. Produces SARIF that populates GitHub's Security tab automatically. No tokens, no Snyk-style signup, no per-seat pricing.
+
+Or as a pre-commit hook:
+
+```sh
+npx patient-zero install-hook
+```
+
+Auto-detects husky / lefthook / pre-commit / native git hooks and wires patient-zero into the right place. Idempotent and removable.
 
 ## What it scans
 
-- npm lockfiles: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`
-- Python lockfiles: `requirements.txt`, `poetry.lock`
-- Running processes (by name)
-- Local persistence: `~/Library/LaunchAgents/` (macOS), `~/.config/systemd/user/` (Linux)
-- Registry config: `~/.npmrc`, `~/.pypirc`
-- AI-agent configs: Claude Desktop, Claude Code, Cursor, Cline (MCP server entries)
-- Your GitHub account (opt-in, uses `gh` CLI or a PAT you provide)
+- **AI-agent MCP configs** — Claude Desktop, Claude Code, Cursor, Cline. Known-malicious servers, typosquats of `@modelcontextprotocol/*`, non-HTTPS URLs, sensitive credentials in env blocks. [Nobody else covers this lane.](docs/MCP-IOC-GUIDE.md)
+- **Running processes** — matches known malicious daemons (e.g. Shai-Hulud's `gh-token-monitor`).
+- **Local persistence** — `~/Library/LaunchAgents/` (macOS), `~/.config/systemd/user/` (Linux), `~/.npmrc`, `~/.pypirc`.
+- **npm + Python lockfiles** — `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `requirements.txt`, `poetry.lock`. Semver-aware version matching.
+- **Your GitHub account** (opt-in) — uses `gh` CLI or a PAT you provide. Looks for repos created by stolen credentials matching known attack patterns.
 
-[See the full IoC list →](data/iocs.json) · [Schema →](docs/IOC-SCHEMA.md)
+[See the full IoC list →](data/iocs.json) · [Schema →](docs/IOC-SCHEMA.md) · [MCP IoC guide →](docs/MCP-IOC-GUIDE.md)
 
 ## What this is NOT
 
-- Not an EDR. Not a runtime sandbox.
-- Not a continuous CI scanner. That's Snyk, Socket, Aikido, osv-scanner. They run 24/7.
-- Not a Snyk replacement. Different job.
+- Not an EDR or runtime sandbox.
+- Not a replacement for continuous monitoring tools like Snyk or Socket — works alongside them.
+- Not a vulnerability scanner (we scan for known-malicious indicators, not CVEs).
 
-patient-zero is the first-aid kit you grab when a supply-chain attack hits the news. 30 seconds, zero install, then you go back to work.
+The opinionated bet: most of the value is in *not-on-GitHub* coverage (MCP configs, processes, local persistence) plus install-time blocking. GitHub's Dependabot now covers part of the lockfile-malware lane natively as of March 2026; we focus on the parts it doesn't.
 
 ## Covered attacks
 
@@ -90,11 +110,11 @@ Tracks **N attack families · N indicators · coverage window 2025-09-01 → pre
 
 ## Exit codes
 
-For CI use.
+For CI use. Same contract across all three modes.
 
 ```
-0  Scan completed. Zero IoCs matched at any severity ≥ low.
-1  Scan completed. ≥1 IoC matched at severity ≥ medium.
+0  Scan completed. Zero IoCs matched at any severity ≥ low. (Install passed through cleanly.)
+1  Scan completed. ≥1 IoC matched at severity ≥ medium. (Install was blocked — postinstall did NOT run.)
 2  Scanner error (network, parse, permission). Scan did not complete.
 ```
 
@@ -123,15 +143,33 @@ The IoC list is updated hourly by a [GitHub Actions workflow](.github/workflows/
 
 ## CI usage
 
-GitHub Actions:
+The composite action is the easiest way. It runs patient-zero, generates a SARIF report, and (combined with `github/codeql-action/upload-sarif`) populates the repo's Security tab inline with findings.
 
 ```yaml
-- name: Supply-chain triage
-  run: npx patient-zero@0.1.0 --json --no-github > patient-zero.json
-  continue-on-error: false   # exit 1 = finding; exit 2 = scanner error
+- uses: 0xSteph/patient-zero@v0.2
+  id: patient-zero
+  with:
+    ecosystem: npm           # optional: restrict to one ecosystem
+    fail-on: medium          # critical|high|medium|low|info
+
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: patient-zero.sarif
+    category: patient-zero
 ```
 
-`--json` produces machine-parseable output. `--no-github` skips the GitHub account scan in CI environments where `gh` isn't authenticated.
+If you don't want the action and prefer to call the CLI directly:
+
+```yaml
+- run: npx patient-zero@latest scan --no-github --json --sarif patient-zero.sarif > scan.json
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: patient-zero.sarif
+```
+
+Both shapes produce SARIF v2.1.0 — GitHub's Security tab understands it natively.
 
 ## Contributing a new IoC
 
@@ -147,15 +185,20 @@ A new attack family also needs an entry in `attack_families` and at minimum one 
 
 ## Comparison
 
-|                          | Continuous? | Multi-family? | MCP-aware? | Zero-install? | Free forever? |
-|---|---|---|---|---|---|
-| **patient-zero**         | No          | Yes           | **Yes**    | **Yes**       | **Yes**       |
-| [Cobenian/shai-hulud-detect](https://github.com/Cobenian/shai-hulud-detect) | No | 1 family | No | No (clone) | Yes |
-| [osv-scanner](https://github.com/google/osv-scanner) | Yes (CI) | Yes | No | No (install) | Yes |
-| Snyk Open Source         | Yes (CI)    | Yes           | No         | No (signup)   | Free tier     |
-| [Aikido Safe Chain](https://github.com/AikidoSec/safe-chain) | Yes (install) | Yes | No | No (install) | Free tier |
+|                          | On-demand triage | Install-time block | CI / GH Action | Process / local scan | MCP-aware | Open IoC DB | Free, no signup |
+|---|---|---|---|---|---|---|---|
+| **patient-zero**         | ✓                | ✓                  | ✓ (SARIF)      | ✓                    | ✓         | ✓           | ✓               |
+| [Aikido Safe Chain](https://github.com/AikidoSec/safe-chain) | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ (closed) | ✓ |
+| [Socket](https://socket.dev/) Free | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ (closed) | ✗ (signup) |
+| [osv-scanner](https://github.com/google/osv-scanner) | ✓ | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| [npq](https://github.com/lirantal/npq) | ✗ | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Dependabot (GitHub native) | ✗ | ✗ | ✓ (only on GitHub) | ✗ | ✗ | ✓ | ✓ (GitHub only) |
+| Snyk Open Source         | partial          | ✗                  | ✓              | ✗                    | ✗         | ✗           | ✗ (signup)      |
+| [Cobenian/shai-hulud-detect](https://github.com/Cobenian/shai-hulud-detect) | ✓ | ✗ | ✗ | partial | ✗ | ✓ (1 family) | ✓ |
 
-Different tools, different jobs. The continuous scanners catch things in your daily pipeline. patient-zero is what you reach for in the 30 seconds after a new supply-chain attack hits the news.
+The lockfile-malware row got crowded after Dependabot added native malware alerts in March 2026. patient-zero's bet for differentiation is on the columns most competitors leave empty: **MCP / process / local persistence scanning, plus install-time blocking with an open IoC database**.
+
+We work alongside the continuous tools — not as a replacement. If you have Snyk in CI, keep it. patient-zero is what you reach for the moment a new supply-chain attack disclosure hits the news, and what you wire into `npm install` to catch the attack before postinstall runs.
 
 ## Security disclosure
 

@@ -174,7 +174,7 @@ function formatAge(ms) {
 }
 
 function packageVersion() {
-  return process.env.PATIENT_ZERO_VERSION ?? '0.1.0-pre.1';
+  return process.env.PATIENT_ZERO_VERSION ?? '0.2.0-pre.1';
 }
 
 /**

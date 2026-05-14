@@ -1,0 +1,97 @@
+name: patient-zero
+description: Scans your repo for supply-chain attack indicators of compromise (npm + Python + MCP configs). Free, no signup, no telemetry.
+author: 0xSteph
+
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  ecosystem:
+    description: Restrict scan to one ecosystem (npm | pypi). Default: scan all.
+    required: false
+    default: ''
+  depth:
+    description: Max directory depth for lockfile search.
+    required: false
+    default: '5'
+  fail-on:
+    description: 'Fail the job if findings at this severity or above are present. One of: critical|high|medium|low|info. Default: medium.'
+    required: false
+    default: 'medium'
+  sarif:
+    description: 'Write SARIF v2.1.0 output to this path (recommended: upload via github/codeql-action/upload-sarif). Default: patient-zero.sarif.'
+    required: false
+    default: 'patient-zero.sarif'
+  json:
+    description: 'Write JSON output to this path (in addition to SARIF). Default: patient-zero.json.'
+    required: false
+    default: 'patient-zero.json'
+  offline:
+    description: 'Use the bundled IoC snapshot instead of fetching from the network. Default: false.'
+    required: false
+    default: 'false'
+  version:
+    description: 'Pin a specific patient-zero version (e.g. 0.2.0). Default: latest.'
+    required: false
+    default: 'latest'
+
+outputs:
+  findings:
+    description: Number of indicators that matched at any severity.
+    value: ${{ steps.scan.outputs.findings }}
+  exit-code:
+    description: 'Exit code from patient-zero: 0 clean, 1 finding ≥ medium, 2 scanner error.'
+    value: ${{ steps.scan.outputs.exit-code }}
+  sarif-path:
+    description: Path to the SARIF report.
+    value: ${{ inputs.sarif }}
+  json-path:
+    description: Path to the JSON report.
+    value: ${{ inputs.json }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run patient-zero
+      id: scan
+      shell: bash
+      run: |
+        set +e
+        ECO_FLAG=""
+        if [ -n "${{ inputs.ecosystem }}" ]; then
+          ECO_FLAG="--ecosystem ${{ inputs.ecosystem }}"
+        fi
+        OFFLINE_FLAG=""
+        if [ "${{ inputs.offline }}" = "true" ]; then
+          OFFLINE_FLAG="--offline"
+        fi
+        npx -y patient-zero@${{ inputs.version }} scan \
+          --no-github \
+          --depth ${{ inputs.depth }} \
+          --json \
+          --sarif "${{ inputs.sarif }}" \
+          --report patient-zero.md \
+          $ECO_FLAG $OFFLINE_FLAG > "${{ inputs.json }}"
+        CODE=$?
+        echo "exit-code=$CODE" >> "$GITHUB_OUTPUT"
+        FINDINGS=$(node -e "try { console.log(JSON.parse(require('fs').readFileSync('${{ inputs.json }}','utf8')).findings.length) } catch { console.log(0) }")
+        echo "findings=$FINDINGS" >> "$GITHUB_OUTPUT"
+        echo ""
+        echo "patient-zero exit code: $CODE · findings: $FINDINGS"
+
+    - name: Decide pass/fail
+      shell: bash
+      run: |
+        node -e "
+          const fs = require('fs');
+          const order = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+          const threshold = order['${{ inputs.fail-on }}'] ?? 2;
+          let findings = [];
+          try { findings = JSON.parse(fs.readFileSync('${{ inputs.json }}','utf8')).findings ?? []; } catch {}
+          const hit = findings.filter(f => (order[f.severity] ?? 99) <= threshold);
+          if (hit.length === 0) { console.log('patient-zero: no findings at or above threshold ${{ inputs.fail-on }} — pass'); process.exit(0); }
+          console.error('patient-zero: ' + hit.length + ' finding(s) at or above threshold ${{ inputs.fail-on }}');
+          for (const f of hit) console.error('  - ' + f.severity.toUpperCase() + ' ' + f.id + ' (' + (f.attack_family_display ?? f.attack_family) + ')');
+          process.exit(1);
+        "

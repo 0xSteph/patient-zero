@@ -96,13 +96,27 @@ test('cli: --version prints version and exits 0', async () => {
   assert.match(result.stdout, /\d+\.\d+\.\d+/);
 });
 
-test('cli: --help shows usage and exits 0', async () => {
+test('cli: --help shows usage and lists subcommands, exits 0', async () => {
   const result = await runCli(['--help']);
   assert.equal(result.code, 0);
   assert.match(result.stdout, /Usage: patient-zero/);
+  assert.match(result.stdout, /scan/);
+  assert.match(result.stdout, /install/);
+});
+
+test('cli: scan --help shows scan-specific options', async () => {
+  const result = await runCli(['scan', '--help']);
+  assert.equal(result.code, 0);
   assert.match(result.stdout, /--offline/);
   assert.match(result.stdout, /--json/);
   assert.match(result.stdout, /--no-github/);
+});
+
+test('cli: install --help shows install-specific options', async () => {
+  const result = await runCli(['install', '--help']);
+  assert.equal(result.code, 0);
+  assert.match(result.stdout, /pkg/);
+  assert.match(result.stdout, /--pm/);
 });
 
 test('cli: --ecosystem npm filters out pypi findings', async () => {

@@ -1,17 +1,25 @@
 name: dogfood
 
-# Runs patient-zero against its own repo daily. If patient-zero finds anything
-# in its own dependencies (lockfile match) or its own config files (MCP, files,
-# processes — unlikely in CI but exercises the pipeline), the job fails loud.
-# This is the "we use ourselves" trust signal from the README.
+# Runs patient-zero against its own repo daily, uploads the SARIF result to
+# the GitHub Security tab, and fails the job if any finding ≥ medium severity
+# surfaces. This is the "we use ourselves" trust signal from the README.
 
 on:
   schedule:
     - cron: '17 6 * * *'  # daily at 06:17 UTC; offset from aggregator
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'bin/**'
+      - 'aggregator/**'
+      - 'data/**'
+      - 'package*.json'
 
 permissions:
   contents: read
+  security-events: write   # upload SARIF to Security tab
 
 jobs:
   scan-self:
@@ -24,19 +32,37 @@ jobs:
           cache: 'npm'
       - run: npm ci
 
-      - name: Run patient-zero against this repo
+      - name: Scan this repo with patient-zero
+        id: scan
+        continue-on-error: true
         run: |
-          node bin/cli.js \
-            --offline \
-            --no-github \
-            --json > scan-result.json
-        # exit 0=clean, 1=finding, 2=scanner-error.
-        # Any non-zero exit fails the job, which is exactly the desired behavior.
+          set +e
+          node bin/cli.js scan --offline --no-github --json --sarif patient-zero.sarif > patient-zero.json
+          echo "exit-code=$?" >> "$GITHUB_OUTPUT"
 
-      - name: Upload scan result
+      - name: Upload SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: patient-zero.sarif
+          category: patient-zero
+
+      - name: Upload reports as run artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dogfood-scan-result
-          path: scan-result.json
+          name: dogfood-reports
+          path: |
+            patient-zero.sarif
+            patient-zero.json
           retention-days: 30
+
+      - name: Fail job on finding ≥ medium
+        run: |
+          node -e "
+            const order = { critical:0, high:1, medium:2, low:3, info:4 };
+            const d = JSON.parse(require('fs').readFileSync('patient-zero.json','utf8'));
+            const hit = (d.findings ?? []).filter(f => (order[f.severity] ?? 99) <= 2);
+            if (hit.length > 0) { console.error('dogfood failed: ' + hit.length + ' finding(s) ≥ medium'); process.exit(1); }
+            console.log('dogfood passed: 0 findings ≥ medium');
+          "
