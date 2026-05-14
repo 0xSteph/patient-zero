@@ -44,7 +44,8 @@ jobs:
           echo "Installing VHS ${VHS_VERSION}"
           curl -fsSL -o /tmp/vhs.tar.gz "https://github.com/charmbracelet/vhs/releases/download/${VHS_VERSION}/vhs_${VHS_VERSION#v}_Linux_x86_64.tar.gz"
           mkdir -p /tmp/vhs
-          tar -xzf /tmp/vhs.tar.gz -C /tmp/vhs
+          # VHS tarball has a top-level dir like vhs_<ver>_Linux_x86_64/
+          tar -xzf /tmp/vhs.tar.gz -C /tmp/vhs --strip-components=1
           sudo install -m 0755 /tmp/vhs/vhs /usr/local/bin/vhs
           vhs --version
 
