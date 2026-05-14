@@ -1,6 +1,6 @@
 {
   "name": "patient-zero",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Scans Node, Python, and AI-agent configs for indicators of compromise from npm and PyPI supply-chain attacks.",
   "type": "module",
   "bin": {
