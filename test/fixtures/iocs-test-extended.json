@@ -1,0 +1,103 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "coverage_window": { "start": "2025-09-01", "end": "present" },
+  "attack_family_count": 2,
+  "indicator_count": 5,
+  "generator": { "name": "test-fixture", "version": "0.0.0", "run_id": "test" },
+  "sources": [],
+  "attack_families": {
+    "test-attack": {
+      "display_name": "Test Attack",
+      "first_observed": "2026-01-01",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "file + process + github + mcp",
+      "primary_external_source": { "name": "test", "url": "https://example.invalid/test" },
+      "active_threat": true,
+      "destructive_failsafe": false
+    },
+    "shai-hulud-test": {
+      "display_name": "Shai-Hulud (test)",
+      "first_observed": "2025-09-15",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "file + process",
+      "primary_external_source": { "name": "test", "url": "https://example.invalid/sh-test" },
+      "active_threat": true,
+      "destructive_failsafe": true,
+      "failsafe_warning": "test warning"
+    }
+  },
+  "indicators": {
+    "package": [],
+    "file": [
+      {
+        "id": "PZ-test-file-001",
+        "type": "file",
+        "attack_family": "shai-hulud-test",
+        "severity": "critical",
+        "first_seen": "2025-09-15",
+        "last_updated": "2025-09-15",
+        "source": "manual",
+        "description": "Test malicious LaunchAgent plist",
+        "path_patterns": ["TMPDIR_PLACEHOLDER/com\\.gh-token-monitor.*\\.plist"],
+        "content_patterns": [],
+        "sha256": [],
+        "platforms": ["all"],
+        "remediation": { "what_to_do": ["isolate the machine first"], "commands": [] }
+      }
+    ],
+    "process": [
+      {
+        "id": "PZ-test-proc-001",
+        "type": "process",
+        "attack_family": "shai-hulud-test",
+        "severity": "critical",
+        "first_seen": "2025-09-15",
+        "last_updated": "2025-09-15",
+        "source": "manual",
+        "description": "Test malicious daemon",
+        "process_names": ["gh-token-monitor"],
+        "command_patterns": [],
+        "platforms": ["all"],
+        "remediation": { "what_to_do": ["isolate before kill"], "commands": [] }
+      }
+    ],
+    "github": [
+      {
+        "id": "PZ-test-gh-001",
+        "type": "github",
+        "attack_family": "test-attack",
+        "severity": "high",
+        "first_seen": "2026-01-01",
+        "last_updated": "2026-01-01",
+        "source": "manual",
+        "description": "Test malicious repo pattern",
+        "repo_name_patterns": ["^[Ss]hai-?[Hh]ulud(-.*)?$"],
+        "repo_description_patterns": ["exfil"],
+        "commit_message_patterns": [],
+        "scope": "user-repos",
+        "remediation": { "what_to_do": ["check and delete"], "commands": [] }
+      }
+    ],
+    "network": [],
+    "mcp": [
+      {
+        "id": "PZ-test-mcp-001",
+        "type": "mcp",
+        "attack_family": "test-attack",
+        "severity": "critical",
+        "first_seen": "2026-01-01",
+        "last_updated": "2026-01-01",
+        "source": "manual",
+        "description": "Test malicious MCP server",
+        "mcp_server_names": ["@evilcorp/mcp-filesystem-helper"],
+        "mcp_server_urls": ["https://mcp.evilcorp.example/sse"],
+        "config_path_patterns": [],
+        "config_content_patterns": ["evilcorp/mcp-filesystem-helper"],
+        "platforms": ["all"],
+        "remediation": { "what_to_do": ["remove the MCP entry"], "commands": [] }
+      }
+    ]
+  },
+  "indexes": { "packages_by_ecosystem_name": {} }
+}

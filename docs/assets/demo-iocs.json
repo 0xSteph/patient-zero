@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-14T18:00:00Z",
+  "coverage_window": { "start": "2025-09-01", "end": "present" },
+  "attack_family_count": 1,
+  "indicator_count": 1,
+  "generator": { "name": "demo-fixture", "version": "0.0.0", "run_id": "demo" },
+  "sources": [{ "name": "manual", "fetched_at": "2026-05-14T18:00:00Z", "indicator_count": 1, "status": "ok" }],
+  "attack_families": {
+    "chalk-sept-2025": {
+      "display_name": "chalk maintainer phish (Sept 2025)",
+      "description": "Phished maintainer credentials used to publish a malicious chalk update; postinstall exfiltrated env vars.",
+      "first_observed": "2025-09-08",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "package",
+      "primary_external_source": { "name": "Snyk Advisory", "url": "https://security.snyk.io/" },
+      "active_threat": false,
+      "destructive_failsafe": false,
+      "references": ["https://security.snyk.io/"]
+    }
+  },
+  "indicators": {
+    "package": [
+      {
+        "id": "GHSA-demo-chalk",
+        "type": "package",
+        "attack_family": "chalk-sept-2025",
+        "severity": "critical",
+        "first_seen": "2025-09-08",
+        "last_updated": "2025-09-12",
+        "source": "manual",
+        "description": "Malicious version of chalk published 2025-09-08; postinstall exfiltrates GITHUB_TOKEN.",
+        "references": ["https://security.snyk.io/"],
+        "ecosystem": "npm",
+        "name": "chalk",
+        "versions": "4.0.0",
+        "version_range": "exact",
+        "remediation": {
+          "what_to_do": [
+            "Run `npm ls chalk` to find which workspace pulls this version",
+            "Pin to a clean version (chalk@5.0.0+) in package.json and re-install",
+            "Rotate any tokens that were in env during the install window"
+          ],
+          "commands": ["npm ls chalk", "npm install chalk@5.0.0"]
+        }
+      }
+    ],
+    "file": [],
+    "process": [],
+    "github": [],
+    "network": [],
+    "mcp": []
+  },
+  "indexes": {
+    "packages_by_ecosystem_name": {
+      "npm:chalk": ["GHSA-demo-chalk"]
+    }
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "$schema": "../docs/ioc-schema.json",
+  "schema_version": "1.0",
+  "note": "Hand-curated IoCs for things that only appear in blog posts and incident writeups. Package indicators come from OSV/GHSA via the aggregator; only file/process/github/network/mcp indicators belong here. Every entry MUST cite a primary_external_source URL — entries without sources are rejected.",
+  "attack_families": {
+    "shai-hulud": {
+      "display_name": "Shai-Hulud",
+      "description": "Self-replicating npm worm. Compromised maintainer accounts via phishing, published malicious versions of widely-used packages, exfiltrated GitHub/npm tokens, installed a persistence daemon with a destructive failsafe.",
+      "first_observed": "2025-09-15",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "package + file + process + github",
+      "primary_external_source": {
+        "name": "StepSecurity",
+        "url": "https://www.stepsecurity.io/blog/shai-hulud-the-npm-worm-explained"
+      },
+      "active_threat": true,
+      "destructive_failsafe": true,
+      "failsafe_warning": "DO NOT revoke npm/GitHub tokens until the host is isolated from the network. The gh-token-monitor daemon detects revocation and runs rm -rf ~/.",
+      "references": [
+        "https://www.stepsecurity.io/blog/shai-hulud-the-npm-worm-explained"
+      ]
+    },
+    "shai-hulud-2": {
+      "display_name": "Shai-Hulud 2.0",
+      "description": "Second wave of the Shai-Hulud campaign. Re-emerged via newly compromised maintainer accounts; tooling refined, persistence patterns updated.",
+      "first_observed": "2025-12-09",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "package + file + process + github",
+      "primary_external_source": {
+        "name": "Microsoft Security",
+        "url": "https://www.microsoft.com/en-us/security/blog/2025/12/09/shai-hulud-2-0-guidance-for-detecting-investigating-and-defending-against-the-supply-chain-attack/"
+      },
+      "active_threat": true,
+      "destructive_failsafe": true,
+      "failsafe_warning": "Same as Shai-Hulud 1.0 — DO NOT revoke tokens until isolated.",
+      "references": [
+        "https://www.microsoft.com/en-us/security/blog/2025/12/09/shai-hulud-2-0-guidance-for-detecting-investigating-and-defending-against-the-supply-chain-attack/"
+      ]
+    },
+    "chalk-sept-2025": {
+      "display_name": "chalk maintainer phish",
+      "description": "Phished maintainer credentials used to publish a malicious chalk update; postinstall exfiltrated env vars.",
+      "first_observed": "2025-09-08",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "package",
+      "primary_external_source": {
+        "name": "Snyk Advisory",
+        "url": "https://security.snyk.io/"
+      },
+      "active_threat": false,
+      "destructive_failsafe": false,
+      "references": []
+    },
+    "sandworm-mode": {
+      "display_name": "SANDWORM_MODE",
+      "description": "Campaign targeting maintainers via spear-phishing; published packages with an obfuscated postinstall identified by the constant SANDWORM_MODE in the bundle.",
+      "first_observed": "2025-11-01",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "package + network",
+      "primary_external_source": {
+        "name": "Socket Research",
+        "url": "https://socket.dev/blog"
+      },
+      "active_threat": false,
+      "destructive_failsafe": false,
+      "references": []
+    },
+    "axios-mar-2026": {
+      "display_name": "axios postinstall (March 2026)",
+      "description": "Brief malicious version of axios published; postinstall script exfiltrated environment variables via DNS to attacker-controlled domains.",
+      "first_observed": "2026-03-12",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "package + network",
+      "primary_external_source": {
+        "name": "GitHub Advisory",
+        "url": "https://github.com/advisories"
+      },
+      "active_threat": false,
+      "destructive_failsafe": false,
+      "references": []
+    },
+    "mini-shai-hulud-tanstack": {
+      "display_name": "Mini Shai-Hulud (TanStack May 2026)",
+      "description": "Self-spreading worm variant targeting TanStack ecosystem maintainers via compromised contributor accounts. Reduced footprint vs Shai-Hulud 1.0/2.0 — no persistence daemon observed.",
+      "first_observed": "2026-05-01",
+      "ecosystems": ["npm"],
+      "ioc_class_summary": "package",
+      "primary_external_source": {
+        "name": "StepSecurity",
+        "url": "https://www.stepsecurity.io/blog/mini-shai-hulud-is-back-a-self-spreading-supply-chain-attack-hits-the-npm-ecosystem"
+      },
+      "active_threat": true,
+      "destructive_failsafe": false,
+      "references": [
+        "https://www.stepsecurity.io/blog/mini-shai-hulud-is-back-a-self-spreading-supply-chain-attack-hits-the-npm-ecosystem"
+      ]
+    }
+  },
+  "indicators": [
+    {
+      "id": "PZ-shai-hulud-file-001",
+      "type": "file",
+      "attack_family": "shai-hulud",
+      "severity": "critical",
+      "first_seen": "2025-09-15",
+      "last_updated": "2026-05-14",
+      "source": "manual",
+      "description": "Shai-Hulud LaunchAgent persistence plist on macOS. CRITICAL: this also implies the destructive failsafe is armed.",
+      "references": [
+        "https://www.stepsecurity.io/blog/shai-hulud-the-npm-worm-explained"
+      ],
+      "path_patterns": [
+        "~/Library/LaunchAgents/com\\.gh-token-monitor.*\\.plist",
+        "/Library/LaunchDaemons/com\\.gh-token-monitor.*\\.plist"
+      ],
+      "content_patterns": [],
+      "sha256": [],
+      "platforms": ["darwin"],
+      "remediation": {
+        "what_to_do": [
+          "DO NOT revoke npm or GitHub tokens yet — the failsafe daemon watches for revocation",
+          "Disconnect this machine from the network immediately",
+          "From an isolated terminal: `launchctl unload <plist-path>` then delete the plist file",
+          "Only after isolation: rotate tokens (npm, GitHub) and audit account activity"
+        ],
+        "commands": [
+          "launchctl list | grep gh-token",
+          "ls -la ~/Library/LaunchAgents/ | grep gh-token"
+        ]
+      }
+    },
+    {
+      "id": "PZ-shai-hulud-process-001",
+      "type": "process",
+      "attack_family": "shai-hulud",
+      "severity": "critical",
+      "first_seen": "2025-09-15",
+      "last_updated": "2026-05-14",
+      "source": "manual",
+      "description": "Shai-Hulud token-monitor daemon running. Armed destructive failsafe — see docs/SHAI-HULUD-FAILSAFE.md before any defensive action.",
+      "references": [
+        "https://www.stepsecurity.io/blog/shai-hulud-the-npm-worm-explained"
+      ],
+      "process_names": ["gh-token-monitor"],
+      "command_patterns": [],
+      "platforms": ["all"],
+      "remediation": {
+        "what_to_do": [
+          "DO NOT revoke tokens — see file indicator PZ-shai-hulud-file-001",
+          "Isolate the machine from the network, then kill the process and remove persistence"
+        ],
+        "commands": [
+          "ps aux | grep gh-token-monitor"
+        ]
+      }
+    },
+    {
+      "id": "PZ-shai-hulud-github-001",
+      "type": "github",
+      "attack_family": "shai-hulud",
+      "severity": "high",
+      "first_seen": "2025-09-15",
+      "last_updated": "2026-05-14",
+      "source": "manual",
+      "description": "Shai-Hulud uses stolen GitHub credentials to create repositories under the victim's account, often named with recognizable patterns.",
+      "references": [
+        "https://www.stepsecurity.io/blog/shai-hulud-the-npm-worm-explained"
+      ],
+      "repo_name_patterns": [
+        "^[Ss]hai-?[Hh]ulud(-.*)?$",
+        "^[Ss]ha1-?[Hh]ulud(-.*)?$"
+      ],
+      "repo_description_patterns": [],
+      "commit_message_patterns": [],
+      "scope": "user-repos",
+      "remediation": {
+        "what_to_do": [
+          "Verify you did NOT create the matching repo(s)",
+          "If unfamiliar, archive or delete the repo from the GitHub web UI (do not use the gh CLI on the affected machine)",
+          "Audit recent activity at https://github.com/settings/security-log"
+        ],
+        "commands": []
+      }
+    }
+  ]
+}

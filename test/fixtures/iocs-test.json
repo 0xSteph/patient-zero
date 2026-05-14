@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "coverage_window": { "start": "2025-09-01", "end": "present" },
+  "attack_family_count": 1,
+  "indicator_count": 3,
+  "generator": { "name": "test-fixture", "version": "0.0.0", "run_id": "test" },
+  "sources": [
+    { "name": "manual", "fetched_at": "2026-01-01T00:00:00Z", "indicator_count": 3, "status": "ok" }
+  ],
+  "attack_families": {
+    "test-attack": {
+      "display_name": "Test Attack",
+      "description": "Synthetic attack family for unit tests.",
+      "first_observed": "2026-01-01",
+      "ecosystems": ["npm", "pypi"],
+      "ioc_class_summary": "package",
+      "primary_external_source": {
+        "name": "test",
+        "url": "https://example.invalid/test"
+      },
+      "active_threat": true,
+      "destructive_failsafe": false,
+      "references": []
+    }
+  },
+  "indicators": {
+    "package": [
+      {
+        "id": "PZ-test-001",
+        "type": "package",
+        "attack_family": "test-attack",
+        "severity": "critical",
+        "first_seen": "2026-01-01",
+        "last_updated": "2026-01-01",
+        "source": "manual",
+        "description": "Synthetic malicious npm package for tests.",
+        "ecosystem": "npm",
+        "name": "fake-malicious-pkg",
+        "versions": "1.0.0",
+        "version_range": "exact",
+        "remediation": {
+          "what_to_do": ["uninstall the package", "pin to a clean version"],
+          "commands": ["npm uninstall fake-malicious-pkg"]
+        }
+      },
+      {
+        "id": "PZ-test-002",
+        "type": "package",
+        "attack_family": "test-attack",
+        "severity": "critical",
+        "first_seen": "2026-01-01",
+        "last_updated": "2026-01-01",
+        "source": "manual",
+        "description": "Synthetic compromised chalk version for tests.",
+        "ecosystem": "npm",
+        "name": "chalk",
+        "versions": "4.0.0",
+        "version_range": "exact",
+        "remediation": {
+          "what_to_do": ["pin chalk to a known-clean version"],
+          "commands": ["npm install chalk@5.0.0"]
+        }
+      },
+      {
+        "id": "PZ-test-003",
+        "type": "package",
+        "attack_family": "test-attack",
+        "severity": "high",
+        "first_seen": "2026-01-01",
+        "last_updated": "2026-01-01",
+        "source": "manual",
+        "description": "Synthetic malicious pypi package for tests.",
+        "ecosystem": "pypi",
+        "name": "evil-pkg",
+        "versions": "2.3.4",
+        "version_range": "exact",
+        "remediation": {
+          "what_to_do": ["uninstall the package"],
+          "commands": ["pip uninstall evil-pkg"]
+        }
+      }
+    ],
+    "file": [],
+    "process": [],
+    "github": [],
+    "network": [],
+    "mcp": []
+  },
+  "indexes": {
+    "packages_by_ecosystem_name": {
+      "npm:fake-malicious-pkg": ["PZ-test-001"],
+      "npm:chalk": ["PZ-test-002"],
+      "pypi:evil-pkg": ["PZ-test-003"]
+    }
+  }
+}

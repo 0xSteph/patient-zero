@@ -1,0 +1,62 @@
+{
+  "name": "patient-zero",
+  "version": "0.1.0-pre.1",
+  "description": "Scans Node, Python, and AI-agent configs for indicators of compromise from npm and PyPI supply-chain attacks.",
+  "type": "module",
+  "bin": {
+    "patient-zero": "./bin/cli.js",
+    "p0": "./bin/cli.js"
+  },
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "data/iocs.json",
+    "data/iocs.snapshot.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "aggregator": "node aggregator/build.js",
+    "render-attacks": "node aggregator/render-attacks.js",
+    "start": "node bin/cli.js"
+  },
+  "keywords": [
+    "supply-chain",
+    "security",
+    "npm",
+    "pypi",
+    "mcp",
+    "ioc",
+    "scanner",
+    "cli",
+    "shai-hulud",
+    "agent-security"
+  ],
+  "homepage": "https://github.com/0xSteph/patient-zero#readme",
+  "bugs": {
+    "url": "https://github.com/0xSteph/patient-zero/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xSteph/patient-zero.git"
+  },
+  "author": "0xSteph",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "fflate": "^0.8.2",
+    "ora": "^8.1.1",
+    "picocolors": "^1.1.1",
+    "semver": "^7.6.3",
+    "smol-toml": "^1.3.1",
+    "yaml": "^2.6.1"
+  }
+}

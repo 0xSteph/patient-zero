@@ -1,0 +1,47 @@
+name: render-demo
+
+# Renders docs/assets/demo.gif from docs/assets/demo.tape via VHS.
+# Runs on:
+#   - manual dispatch
+#   - any push that touches the tape script or the demo fixture
+#   - the publish workflow (so a fresh GIF ships with each release)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/assets/demo.tape'
+      - 'docs/assets/demo-project/**'
+      - 'docs/assets/demo-iocs.json'
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Render demo.gif with VHS
+        uses: charmbracelet/vhs-action@v2
+        with:
+          path: docs/assets/demo.tape
+
+      - name: Commit refreshed demo.gif if changed
+        run: |
+          git config user.name 'patient-zero-demo[bot]'
+          git config user.email '0xSteph+patient-zero@users.noreply.github.com'
+          if [[ -n "$(git status --porcelain docs/assets/demo.gif)" ]]; then
+            git add docs/assets/demo.gif
+            git commit -m "docs: refresh demo.gif"
+            git push
+          else
+            echo "demo.gif unchanged; nothing to commit."
+          fi

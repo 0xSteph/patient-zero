@@ -1,0 +1,23 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+
+packages:
+
+  fake-malicious-pkg@1.0.0:
+    resolution: {integrity: sha512-fake==}
+
+  express@4.17.1:
+    resolution: {integrity: sha512-fake==}
+
+  '@scoped/pkg@1.2.3':
+    resolution: {integrity: sha512-fake==}
+
+snapshots:
+
+  fake-malicious-pkg@1.0.0: {}
+
+  express@4.17.1: {}
+
+  '@scoped/pkg@1.2.3': {}

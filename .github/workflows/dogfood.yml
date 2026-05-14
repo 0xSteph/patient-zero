@@ -1,0 +1,42 @@
+name: dogfood
+
+# Runs patient-zero against its own repo daily. If patient-zero finds anything
+# in its own dependencies (lockfile match) or its own config files (MCP, files,
+# processes — unlikely in CI but exercises the pipeline), the job fails loud.
+# This is the "we use ourselves" trust signal from the README.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'  # daily at 06:17 UTC; offset from aggregator
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan-self:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Run patient-zero against this repo
+        run: |
+          node bin/cli.js \
+            --offline \
+            --no-github \
+            --json > scan-result.json
+        # exit 0=clean, 1=finding, 2=scanner-error.
+        # Any non-zero exit fails the job, which is exactly the desired behavior.
+
+      - name: Upload scan result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dogfood-scan-result
+          path: scan-result.json
+          retention-days: 30

@@ -1,0 +1,41 @@
+name: aggregator
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # every hour
+  workflow_dispatch:      # also manual
+
+permissions:
+  contents: write         # needs to commit data/iocs.json + docs/ATTACKS.md
+
+jobs:
+  refresh:
+    name: refresh IoC database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Run aggregator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node aggregator/build.js
+
+      - name: Commit if changed
+        run: |
+          git config user.name 'patient-zero-aggregator[bot]'
+          git config user.email '0xSteph+patient-zero@users.noreply.github.com'
+          if [[ -n "$(git status --porcelain data/iocs.json docs/ATTACKS.md)" ]]; then
+            git add data/iocs.json docs/ATTACKS.md
+            # Pull a short summary from the run to feed the commit message
+            FAMILIES=$(node -e "console.log(JSON.parse(require('fs').readFileSync('data/iocs.json','utf8')).attack_family_count)")
+            INDICATORS=$(node -e "console.log(JSON.parse(require('fs').readFileSync('data/iocs.json','utf8')).indicator_count)")
+            git commit -m "ioc-update: ${FAMILIES} families · ${INDICATORS} indicators"
+            git push
+          else
+            echo "No IoC changes; nothing to commit."
+          fi
