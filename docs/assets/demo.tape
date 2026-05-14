@@ -3,10 +3,13 @@
 # Render with:    vhs docs/assets/demo.tape
 # Output:         docs/assets/demo.gif
 #
-# Demo content: simulates running `npx patient-zero` against a project that
-# unknowingly pulled chalk@4.0.0 (the September 2025 maintainer-phish version).
-# We use a local alias and fixture IoC database so this recording is fully
-# self-contained and reproducible from a clean checkout.
+# Demo: scan a project that pulled chalk@4.0.0 (the Sept 2025 maintainer-phish
+# version). Uses a local fixture IoC database so the demo is self-contained
+# and reproducible from a clean checkout — no real machine state required.
+#
+# Implementation note: we use a shell *function* (not an alias) so the
+# absolute path to bin/cli.js gets resolved once at definition time. An
+# alias would re-evaluate $PWD at invocation time and break after `cd`.
 
 Output docs/assets/demo.gif
 
@@ -17,11 +20,14 @@ Set Theme "Catppuccin Mocha"
 Set TypingSpeed 50ms
 Set PlaybackSpeed 1.0
 
-# Setup (hidden) — alias the binary, set up the demo IoC fixture, cd into demo project.
+# ── Setup (hidden) — bake absolute paths, define `patient-zero` as a function,
+#    cd into the demo project, clear the prompt for a clean recording.
 Hide
-Type "export PATIENT_ZERO_IOCS_PATH=$PWD/docs/assets/demo-iocs.json"
+Type "PZ_BIN=$PWD/bin/cli.js"
 Enter
-Type "alias patient-zero='node $PWD/bin/cli.js --no-github'"
+Type "PZ_IOCS=$PWD/docs/assets/demo-iocs.json"
+Enter
+Type 'patient-zero() { PATIENT_ZERO_IOCS_PATH="$PZ_IOCS" node "$PZ_BIN" --no-github "$@"; }'
 Enter
 Type "cd docs/assets/demo-project"
 Enter
@@ -30,7 +36,7 @@ Enter
 Sleep 200ms
 Show
 
-# Visible — the user reads this and gets the point.
+# ── Visible — the demo a viewer actually sees.
 Type "# Did chalk's Sept-2025 compromise touch this project?"
 Enter
 Sleep 800ms
@@ -40,5 +46,6 @@ Sleep 500ms
 Enter
 Sleep 4s
 
+# Trailing blank line + pause so the final frame is the report card, not the prompt.
 Type ""
 Sleep 2s
