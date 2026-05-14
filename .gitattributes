@@ -1,0 +1,23 @@
+# Test fixtures and shipped artifacts must stay LF on every platform.
+# Without this, Windows clones with autocrlf=true silently rewrite line
+# endings and break parsers that split on '\n\n+'.
+
+# Test fixtures
+test/fixtures/** text eol=lf
+
+# Generated data / docs that ship in the package
+data/*.json text eol=lf
+docs/ATTACKS.md text eol=lf
+
+# Source code — always LF to keep formatters and diffs sane
+*.js text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+
+# Binary files
+*.gif binary
+*.png binary
+*.jpg binary

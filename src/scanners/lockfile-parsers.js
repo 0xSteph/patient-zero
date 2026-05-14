@@ -88,7 +88,7 @@ export async function parsePnpmLock(filePath) {
 }
 
 export async function parseYarnLock(filePath) {
-  const raw = await readFile(filePath, 'utf8');
+  const raw = (await readFile(filePath, 'utf8')).replace(/\r\n/g, '\n');
   const out = [];
   const blocks = raw.split(/\n\n+/);
 

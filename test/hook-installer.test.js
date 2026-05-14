@@ -64,8 +64,11 @@ test('installHook: native — creates executable .git/hooks/pre-commit when none
     const body = await readFile(hookPath, 'utf8');
     assert.match(body, /^#!/m, 'shebang present');
     assert.match(body, /patient-zero/);
-    const st = await stat(hookPath);
-    assert.equal(st.mode & 0o111, 0o111, 'executable bits set');
+    // Skip exec-bit assertion on Windows — NTFS has no Unix permission bits.
+    if (process.platform !== 'win32') {
+      const st = await stat(hookPath);
+      assert.equal(st.mode & 0o111, 0o111, 'executable bits set');
+    }
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

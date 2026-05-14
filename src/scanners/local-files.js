@@ -53,7 +53,10 @@ export async function scan(iocs, options = {}) {
       for (const name of entries) {
         const full = path.join(parentDir, name);
         pathsChecked += 1;
-        if (basenameRegex.test(full)) {
+        // Normalize to forward-slash form so the regex (which uses /) matches
+        // identically on Windows and POSIX.
+        const matchTarget = full.replace(/\\/g, '/');
+        if (basenameRegex.test(matchTarget)) {
           let isFile = false;
           try {
             const s = await stat(full);
