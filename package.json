@@ -23,7 +23,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node --test",
     "aggregator": "node aggregator/build.js",
     "render-attacks": "node aggregator/render-attacks.js",
     "start": "node bin/cli.js"
