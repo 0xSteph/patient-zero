@@ -30,7 +30,7 @@ chalk maintainer phish (Sept 2025)
      Source: https://security.snyk.io/
 
 Scanned 1 lockfiles · 234 processes · 2 MCP configs · 0 repos · 0 paths checked
-0.02s · coverage 2025-09-01 → present · 6 families · 47 indicators · IoC: fresh
+0.02s · coverage 2025-09-08 → present · 7 families · 6 indicators · IoC: fresh
 ```
 
 <details><summary>Or watch the 12-second animated demo</summary>
@@ -101,12 +101,12 @@ Auto-generated from [`data/iocs.json`](data/iocs.json). To add a new attack fami
 |---|---|---|---|---|
 | Shai-Hulud | 2025-09-15 | npm | package + file + process + github | [StepSecurity](https://www.stepsecurity.io/blog/) |
 | chalk maintainer phish | 2025-09-08 | npm | package | [Snyk Advisory](https://security.snyk.io/) |
-| SANDWORM_MODE | 2025-11-XX | npm | package + network | [Socket](https://socket.dev/blog) |
-| Shai-Hulud 2.0 | 2025-12-XX | npm | package + file + process + github | [Microsoft](https://www.microsoft.com/en-us/security/blog/2025/12/09/shai-hulud-2-0-guidance-for-detecting-investigating-and-defending-against-the-supply-chain-attack/) |
+| SANDWORM_MODE | 2025-11-01 | npm | package + network | [Socket](https://socket.dev/blog) |
+| Shai-Hulud 2.0 | 2025-12-09 | npm | package + file + process + github | [Microsoft](https://www.microsoft.com/en-us/security/blog/2025/12/09/shai-hulud-2-0-guidance-for-detecting-investigating-and-defending-against-the-supply-chain-attack/) |
 | axios postinstall | 2026-03-12 | npm | package + network | [GHSA](https://github.com/advisories) |
 | Mini Shai-Hulud (TanStack) | 2026-05-01 | npm | package | [StepSecurity](https://www.stepsecurity.io/blog/mini-shai-hulud-is-back-a-self-spreading-supply-chain-attack-hits-the-npm-ecosystem) |
 
-Tracks **N attack families · N indicators · coverage window 2025-09-01 → present.** (Auto-updated every hour by the [aggregator workflow](.github/workflows/aggregator.yml).)
+Tracks **6 named attack campaigns + 1 heuristic family (MCP supply-chain patterns) · 6 indicators · coverage window 2025-09-08 → present.** (Auto-updated every hour by the [aggregator workflow](.github/workflows/aggregator.yml); the numbers in this line are a static snapshot of v0.2.0.)
 
 ## Exit codes
 
@@ -132,7 +132,7 @@ Example finding output:
 [OK]       0 indicators matched: lockfiles, processes, github, mcp
 
 Scanned 47 lockfiles · 234 processes · 12 MCP configs in 1.4s.
-Coverage window: 2025-09-01 → present.
+Coverage window: 2025-09-08 → present.
 ```
 
 ## How it works
@@ -212,4 +212,4 @@ MIT. See [`LICENSE`](LICENSE).
 
 ---
 
-Maintained by [@0xSteph](https://github.com/0xSteph). Incident updates: [@patient_zero_cli](https://twitter.com/patient_zero_cli).
+Maintained by [@0xSteph](https://github.com/0xSteph). Incident updates: [@patientzerocli](https://twitter.com/patientzerocli).
