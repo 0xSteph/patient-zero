@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { writeFile } from 'node:fs/promises';
+import { writeFile, readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { Command } from 'commander';
 import ora from 'ora';
 import pc from 'picocolors';
@@ -16,7 +18,10 @@ import { scan as scanGithub } from '../src/scanners/github.js';
 import { runInterceptor } from '../src/install-interceptor.js';
 import { installHook, removeHook, detectHookSystem } from '../src/hook-installer.js';
 
-const VERSION = '0.2.0-pre.1';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const PKG_PATH = path.resolve(HERE, '../package.json');
+const VERSION = JSON.parse(await readFile(PKG_PATH, 'utf8')).version;
+process.env.PATIENT_ZERO_VERSION = VERSION;
 
 // Exit code contract — see README. Do not change without bumping major.
 const EXIT_CLEAN = 0;
