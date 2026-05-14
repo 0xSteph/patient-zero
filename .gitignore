@@ -1,0 +1,34 @@
+# Internal notes & AI working files — never publish
+CLAUDE.md
+CONTEXT.md
+CLAUDE.local.md
+AGENTS.override.md
+.claude/
+notes/
+internal/
+scratch/
+docs/superpowers/
+specs/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env
+.env
+.env.local
+.env.*.local
