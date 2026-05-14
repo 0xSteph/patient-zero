@@ -51,7 +51,12 @@ test('mcp scanner: missing config file is silently skipped (no error)', async ()
 
 // ---------- Local file scanner ----------
 
-test('local-files scanner: finds a path matching an IoC regex', async () => {
+// In production, file-indicator path_patterns target macOS LaunchAgents and Linux
+// systemd units — neither exists on Windows. The path-regex mechanism is platform-
+// agnostic in code, but the cross-platform quirks of compiling a Windows absolute
+// path into a POSIX-style regex aren't worth fighting for a feature Windows users
+// never trigger. Tested on Linux + macOS where it actually ships.
+test('local-files scanner: finds a path matching an IoC regex', { skip: process.platform === 'win32' ? 'skipped on Windows (feature targets macOS+Linux persistence locations)' : false }, async () => {
   // Build a temp dir, drop a fake gh-token-monitor plist in it, point a forged IoC at it
   const dir = await mkdir(path.join(tmpdir(), `p0-test-${Date.now()}`), { recursive: true });
   try {
