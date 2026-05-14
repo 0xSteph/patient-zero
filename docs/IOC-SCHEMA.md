@@ -119,6 +119,8 @@ Index keys (`packages_by_ecosystem_name`) are always **lowercase** since npm is 
 
 `~` in patterns is expanded to the user's home directory at scan time. Patterns are matched case-sensitively unless you explicitly include the `(?i)` flag.
 
+**Use forward slashes in `path_patterns` regardless of target platform.** The scanner normalizes the candidate path to forward-slash form before regex testing, so `~/Library/LaunchAgents/foo\.plist` matches identically on macOS and a Windows runner that's emulating macOS paths. Do not embed Windows-style backslashes; they will be interpreted as regex escapes and silently fail to match.
+
 ### `type: "process"`
 
 ```jsonc

@@ -59,13 +59,18 @@ test('local-files scanner: finds a path matching an IoC regex', async () => {
     await writeFile(malPath, '<plist></plist>');
 
     const iocs = JSON.parse(await readFile(FIXTURE_IOCS, 'utf8'));
-    // Patch the placeholder with our actual tmpdir
-    iocs.indicators.file[0].path_patterns[0] = `${dir}/com\\.gh-token-monitor.*\\.plist`;
+    // IoC schema documents path_patterns as using forward slashes (regex format).
+    // Normalize the tmpdir separator so the test is platform-portable.
+    const dirFwd = dir.replace(/\\/g, '/');
+    iocs.indicators.file[0].path_patterns[0] = `${dirFwd}/com\\.gh-token-monitor.*\\.plist`;
 
     const result = await scanLocalFiles(iocs);
     assert.equal(result.errors.length, 0);
+    // The scanner normalizes path separators internally; the reported artifact path
+    // is platform-native (the value Node hands back from readdir + path.join).
+    const expectedPath = malPath;
     assert.equal(result.findings.length, 1, `expected 1 finding, got ${result.findings.length}`);
-    assert.equal(result.findings[0].artifact.path, malPath);
+    assert.equal(result.findings[0].artifact.path, expectedPath);
     assert.equal(result.findings[0].indicator.attack_family, 'shai-hulud-test');
   } finally {
     await rm(dir, { recursive: true, force: true });
