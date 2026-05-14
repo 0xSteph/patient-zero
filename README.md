@@ -152,7 +152,7 @@ The composite action is the easiest way. It runs patient-zero, generates a SARIF
     ecosystem: npm           # optional: restrict to one ecosystem
     fail-on: medium          # critical|high|medium|low|info
 
-- uses: github/codeql-action/upload-sarif@v3
+- uses: github/codeql-action/upload-sarif@v4
   if: always()
   with:
     sarif_file: patient-zero.sarif
@@ -163,7 +163,7 @@ If you don't want the action and prefer to call the CLI directly:
 
 ```yaml
 - run: npx patient-zero@latest scan --no-github --json --sarif patient-zero.sarif > scan.json
-- uses: github/codeql-action/upload-sarif@v3
+- uses: github/codeql-action/upload-sarif@v4
   if: always()
   with:
     sarif_file: patient-zero.sarif
