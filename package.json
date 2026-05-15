@@ -52,7 +52,6 @@
   "license": "MIT",
   "dependencies": {
     "commander": "^12.1.0",
-    "fflate": "^0.8.2",
     "ora": "^8.1.1",
     "picocolors": "^1.1.1",
     "semver": "^7.6.3",

@@ -21,8 +21,6 @@ jobs:
       - run: npm ci
 
       - name: Run aggregator
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node aggregator/build.js
 
       - name: Commit if changed

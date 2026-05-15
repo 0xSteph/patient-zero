@@ -1,19 +1,16 @@
 #!/usr/bin/env node
 /**
- * Aggregator entry point. Fetches IoCs from all configured sources, merges, validates,
- * writes data/iocs.json and regenerates docs/ATTACKS.md.
+ * Aggregator entry point. Reads curated IoCs from data/manual-iocs.json, merges,
+ * validates, writes data/iocs.json and regenerates docs/ATTACKS.md.
  *
  * Usage:
- *   node aggregator/build.js                  (all sources)
- *   node aggregator/build.js --manual-only    (skip OSV + GHSA — useful for offline test)
- *   node aggregator/build.js --no-write       (compute but don't write files)
+ *   node aggregator/build.js                (build)
+ *   node aggregator/build.js --no-write     (compute but don't write files)
  */
 
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fetchManual } from './sources/manual.js';
-import { fetchOsv } from './sources/osv.js';
-import { fetchGithubAdvisories } from './sources/github-advisories.js';
 import { merge } from './normalize.js';
 import { validate } from './validate.js';
 import { renderAttacks } from './render-attacks.js';
@@ -25,15 +22,9 @@ const OUTPUT_ATTACKS = path.resolve(process.cwd(), 'docs/ATTACKS.md');
 
 async function main() {
   const argv = new Set(process.argv.slice(2));
-  const manualOnly = argv.has('--manual-only');
   const noWrite = argv.has('--no-write');
 
-  const tasks = [fetchManual()];
-  if (!manualOnly) {
-    tasks.push(fetchOsv(), fetchGithubAdvisories());
-  }
-
-  const sources = await Promise.all(tasks);
+  const sources = await Promise.all([fetchManual()]);
   const merged = merge(sources);
 
   const doc = {

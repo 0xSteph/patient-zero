@@ -3,8 +3,6 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fetchManual } from '../aggregator/sources/manual.js';
-import { fetchOsv } from '../aggregator/sources/osv.js';
-import { fetchGithubAdvisories } from '../aggregator/sources/github-advisories.js';
 import { merge } from '../aggregator/normalize.js';
 import { validate } from '../aggregator/validate.js';
 import { renderAttacks } from '../aggregator/render-attacks.js';
@@ -19,29 +17,7 @@ test('manual source reads data/manual-iocs.json and reports status=ok', async ()
   assert.ok(Object.keys(result.attack_families).length >= 6, 'manual seed should have 6+ attack families');
 });
 
-test('OSV and GHSA fetchers fail closed when network/token are unavailable (no live calls in tests)', async () => {
-  // OSV: simulate network failure
-  const osv = await fetchOsv({
-    sources: [{ ecosystem: 'npm', url: 'https://unreachable.invalid/x.zip' }],
-    fetchFn: async () => { throw new Error('simulated network failure'); },
-  });
-  assert.ok(osv.status === 'error', `expected error status, got ${osv.status}`);
-  assert.deepEqual(osv.indicators, []);
-
-  // GHSA: no token, no injected fetchFn → returns 'error' gracefully
-  const prevToken = process.env.GITHUB_TOKEN;
-  delete process.env.GITHUB_TOKEN;
-  try {
-    const ghsa = await fetchGithubAdvisories();
-    assert.equal(ghsa.status, 'error');
-    assert.deepEqual(ghsa.indicators, []);
-  } finally {
-    if (prevToken !== undefined) process.env.GITHUB_TOKEN = prevToken;
-  }
-});
-
 test('merge produces the v1.0 grouped indicator shape', async () => {
-  // Only call the manual source for this shape-check test; OSV/GHSA covered in aggregator-sources.test.js
   const sources = await Promise.all([fetchManual()]);
   const merged = merge(sources);
 
@@ -186,9 +162,9 @@ test('renderAttacks produces a markdown table with one row per attack family', a
   assert.equal(dataRows, merged.attack_family_count, `expected ${merged.attack_family_count} rows, got ${dataRows}`);
 });
 
-test('end-to-end: build.js --manual-only --no-write succeeds', async () => {
+test('end-to-end: build.js --no-write succeeds', async () => {
   const { spawn } = await import('node:child_process');
-  const child = spawn(process.execPath, ['aggregator/build.js', '--manual-only', '--no-write'], {
+  const child = spawn(process.execPath, ['aggregator/build.js', '--no-write'], {
     stdio: 'pipe',
   });
   let stdout = '';

@@ -13,9 +13,6 @@ This is the contract for entries in `data/manual-iocs.json` and the format the a
   "indicator_count": 3,
   "generator": { "name": "patient-zero-aggregator", "version": "0.1.0", "run_id": "..." },
   "sources": [
-    { "name": "osv-npm", "fetched_at": "...", "indicator_count": 0, "status": "ok" },
-    { "name": "osv-pypi", "fetched_at": "...", "indicator_count": 0, "status": "ok" },
-    { "name": "github-advisories", "fetched_at": "...", "indicator_count": 0, "status": "ok" },
     { "name": "manual", "fetched_at": "...", "indicator_count": 3, "status": "ok" }
   ],
   "attack_families": { /* keyed map */ },
@@ -71,7 +68,7 @@ Every indicator regardless of type has these fields:
   "severity": "critical|high|medium|low|info",
   "first_seen": "YYYY-MM-DD",
   "last_updated": "YYYY-MM-DD",
-  "source": "osv-npm|osv-pypi|github-advisories|openssf-malicious|manual",
+  "source": "manual",
   "references": ["https://..."],
   "description": "What this is and what to do, in 1–2 sentences.",
   "remediation": {                // REQUIRED on severity=critical|high
