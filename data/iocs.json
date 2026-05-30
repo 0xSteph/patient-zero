@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-30T17:12:48.079Z",
+  "generated_at": "2026-05-30T19:22:50.950Z",
   "coverage_window": {
     "start": "2025-09-08",
     "end": "present"
@@ -10,12 +10,12 @@
   "generator": {
     "name": "patient-zero-aggregator",
     "version": "0.1.0",
-    "run_id": "26689957222"
+    "run_id": "26692728550"
   },
   "sources": [
     {
       "name": "manual",
-      "fetched_at": "2026-05-30T17:12:48.078Z",
+      "fetched_at": "2026-05-30T19:22:50.948Z",
       "indicator_count": 6,
       "status": "ok"
     }
