@@ -2,7 +2,7 @@
 
 Auto-generated from [`data/iocs.json`](../data/iocs.json) by the [aggregator](../aggregator/). To add an attack family, see [docs/CONTRIBUTING.md](CONTRIBUTING.md). Every row must cite a `primary_external_source`.
 
-**Coverage window:** 2025-09-08 → present  · **Families tracked:** 7  · **Indicators:** 6  · **Last updated:** 2026-07-15T18:10:52.441Z
+**Coverage window:** 2025-09-08 → present  · **Families tracked:** 7  · **Indicators:** 6  · **Last updated:** 2026-07-15T20:13:01.078Z
 
 | Attack family | First observed | Ecosystem | IoC class | Active threat | Source |
 |---|---|---|---|---|---|
