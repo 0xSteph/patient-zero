@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import semver from 'semver';
 import { detectPackageManager, resolveInstallTree } from './scanners/install-tree.js';
+import { checkOsvMalware } from './osv.js';
 
 /**
  * Cross-reference resolved install tree against IoC package indicators.
@@ -99,6 +100,26 @@ export async function runInterceptor(args) {
   onProgress('resolved', { count: resolved.length });
 
   const findings = matchTreeAgainstIocs(resolved, args.iocs);
+
+  // Live OSV lookup across the full resolved tree (exact versions, so the
+  // verdict is precise). The bundled DB only carries a rolling window of
+  // recent malware; this covers the rest. Fails open on network errors.
+  if (!args.offline) {
+    const osvFindings = await checkOsvMalware(resolved, { fetchFn: args.fetchFn });
+    for (const f of osvFindings) {
+      findings.push({
+        indicator: {
+          id: f.osvIds[0],
+          type: 'package',
+          severity: f.severity,
+          attack_family: 'osv-malicious-packages',
+          description: f.message,
+          remediation: { what_to_do: [f.suggestion] },
+        },
+        artifact: { name: f.name, version: f.version ?? '*', source: 'osv-live' },
+      });
+    }
+  }
   onProgress('scanned', { findings: findings.length });
 
   if (findings.length > 0) {

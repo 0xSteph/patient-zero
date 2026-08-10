@@ -123,7 +123,7 @@ Auto-generated from [`data/iocs.json`](data/iocs.json). To add a new attack fami
 | axios postinstall | 2026-03-12 | npm | package + network | [GHSA](https://github.com/advisories) |
 | Mini Shai-Hulud (TanStack) | 2026-05-01 | npm | package | [StepSecurity](https://www.stepsecurity.io/blog/mini-shai-hulud-is-back-a-self-spreading-supply-chain-attack-hits-the-npm-ecosystem) |
 
-Tracks **6 named attack campaigns + 1 heuristic family (MCP supply-chain patterns) · 6 indicators · coverage window 2025-09-08 → present.** (Auto-updated every hour by the [aggregator workflow](.github/workflows/aggregator.yml); the numbers in this line are a static snapshot of v0.2.0.)
+Tracks **6 named attack campaigns + the full OSV/OpenSSF malicious-packages feed (rolling 30-day window, ~3,500 package indicators) + 1 heuristic family (MCP supply-chain patterns) · coverage window 2025-09-08 → present.** Auto-updated every hour by the [aggregator workflow](.github/workflows/aggregator.yml) — see [docs/ATTACKS.md](docs/ATTACKS.md) for live counts. Malware older than the rolling window is still caught at install time by the live OSV.dev lookup in the guard and interceptor.
 
 ## Exit codes
 
@@ -154,9 +154,9 @@ Coverage window: 2025-09-08 → present.
 
 ## How it works
 
-patient-zero fetches a single normalized IoC list ([`data/iocs.json`](data/iocs.json)) from GitHub once per hour, then runs five scanners in parallel against your machine, lockfiles, and GitHub account (opt-in). It does not phone home, does not collect telemetry, does not require a signup. The IoC list and the source feeds it aggregates from are public.
+patient-zero fetches a single normalized IoC list ([`data/iocs.json`](data/iocs.json)) from GitHub once per hour, then runs five scanners in parallel against your machine, lockfiles, and GitHub account (opt-in). Install-time paths (the agent guard and `patient-zero install`) additionally query OSV.dev live for the exact packages being installed, covering the full 200k+ entry malicious-packages corpus without bundling it. It does not phone home, does not collect telemetry, does not require a signup. The IoC list and the source feeds it aggregates from are public.
 
-The IoC list is updated hourly by a [GitHub Actions workflow](.github/workflows/aggregator.yml) that pulls from OSV.dev, GitHub Security Advisories, and a hand-curated [`data/manual-iocs.json`](data/manual-iocs.json). Source code: [`aggregator/`](aggregator/).
+The IoC list is updated hourly by a [GitHub Actions workflow](.github/workflows/aggregator.yml) that pulls the OSV.dev bulk feeds (npm + PyPI, MAL-* advisories from [OpenSSF malicious-packages](https://github.com/ossf/malicious-packages), rolling 30-day window) and merges a hand-curated [`data/manual-iocs.json`](data/manual-iocs.json). Source code: [`aggregator/`](aggregator/).
 
 ## CI usage
 

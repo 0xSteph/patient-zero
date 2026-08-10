@@ -2,7 +2,7 @@
 
 Auto-generated from [`data/iocs.json`](../data/iocs.json) by the [aggregator](../aggregator/). To add an attack family, see [docs/CONTRIBUTING.md](CONTRIBUTING.md). Every row must cite a `primary_external_source`.
 
-**Coverage window:** 2025-09-08 → present  · **Families tracked:** 7  · **Indicators:** 6  · **Last updated:** 2026-08-10T08:41:14.336Z
+**Coverage window:** 2025-09-08 → present  · **Families tracked:** 8  · **Indicators:** 3490  · **Last updated:** 2026-08-10T15:17:52.765Z
 
 | Attack family | First observed | Ecosystem | IoC class | Active threat | Source |
 |---|---|---|---|---|---|
@@ -13,6 +13,7 @@ Auto-generated from [`data/iocs.json`](../data/iocs.json) by the [aggregator](..
 | SANDWORM_MODE | 2025-11-01 | npm | package + network | no | [Socket Research](https://socket.dev/blog) |
 | Shai-Hulud | 2025-09-15 | npm | package + file + process + github | yes | [StepSecurity](https://www.stepsecurity.io/blog/shai-hulud-the-npm-worm-explained) |
 | chalk maintainer phish | 2025-09-08 | npm | package | no | [Snyk Advisory](https://security.snyk.io/) |
+| Malicious packages (OSV/OpenSSF feed) | 2025-09-08 | npm, pypi | package | yes | [OpenSSF malicious-packages](https://github.com/ossf/malicious-packages) |
 
 ---
 

@@ -1,6 +1,7 @@
 import { loadIocs } from './ioc-loader.js';
 import { matchTreeAgainstIocs } from './install-interceptor.js';
 import { parsePackageSpec, runHeuristics, DEFAULT_COOLDOWN_HOURS } from './heuristics.js';
+import { checkOsvMalware } from './osv.js';
 
 /**
  * Agent guard: the runtime half of `patient-zero protect`.
@@ -242,6 +243,17 @@ export async function evaluateCommand(command, options = {}) {
           fetchFn: options.fetchFn,
         });
         heuristicFindings.push(...findings);
+      }
+
+      // Live OSV malicious-package lookup — covers the full advisory corpus,
+      // which the bundled DB (rolling window) intentionally does not.
+      if (!options.offline) {
+        const osvEntries = op.packages.map((p) => ({
+          name: p.name,
+          version: p.spec && /^\d+\.\d+\.\d+/.test(p.spec) ? p.spec : null,
+          ecosystem: op.ecosystem,
+        }));
+        heuristicFindings.push(...await checkOsvMalware(osvEntries, { fetchFn: options.fetchFn }));
       }
     }
   }

@@ -11,6 +11,7 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fetchManual } from './sources/manual.js';
+import { fetchOsvMalware } from './sources/osv-malware.js';
 import { merge } from './normalize.js';
 import { validate } from './validate.js';
 import { renderAttacks } from './render-attacks.js';
@@ -24,7 +25,8 @@ async function main() {
   const argv = new Set(process.argv.slice(2));
   const noWrite = argv.has('--no-write');
 
-  const sources = await Promise.all([fetchManual()]);
+  // manual first: on id conflicts, curated entries win over feed entries.
+  const sources = await Promise.all([fetchManual(), fetchOsvMalware()]);
   const merged = merge(sources);
 
   const doc = {

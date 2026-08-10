@@ -260,6 +260,7 @@ async function runInstallImpl(pkgs, opts) {
     pkgs,
     iocs,
     pm: opts.pm,
+    offline: Boolean(opts.offline),
     onProgress: (event, data) => {
       if (event === 'detect') resolveSpinner && (resolveSpinner.text = `Resolving install (${data.pm})…`);
       if (event === 'resolved') resolveSpinner?.succeed(`Resolved ${data.count} packages`);
