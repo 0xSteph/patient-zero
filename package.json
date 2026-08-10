@@ -1,6 +1,6 @@
 {
   "name": "patient-zero",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Scans Node, Python, and AI-agent configs for indicators of compromise from npm and PyPI supply-chain attacks.",
   "type": "module",
   "bin": {
@@ -17,6 +17,7 @@
   "files": [
     "bin/",
     "src/",
+    "data/popular-packages.json",
     "data/iocs.json",
     "data/iocs.snapshot.json",
     "README.md",
@@ -38,7 +39,12 @@
     "scanner",
     "cli",
     "shai-hulud",
-    "agent-security"
+    "agent-security",
+    "slopsquatting",
+    "vibe-coding",
+    "claude-code",
+    "cursor",
+    "ai-agent"
   ],
   "homepage": "https://github.com/0xSteph/patient-zero#readme",
   "bugs": {

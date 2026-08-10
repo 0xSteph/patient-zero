@@ -1,6 +1,8 @@
 # patient-zero
 
-Scans Node, Python, and AI-agent configs for indicators of compromise from npm and PyPI supply-chain attacks (Sept 2025 – present). Triage in 30 seconds, block malicious installs before postinstall runs, or wire it into your CI — same IoC database, three modes, one command.
+**Vibe code without getting infected.** Your AI agent installs packages you never see — patient-zero is the hook it can't skip. One command wires it into Claude Code and Cursor so every install the agent runs (even in auto / skip-permissions mode) is checked for known supply-chain malware, hallucinated package names, and day-zero uploads *before* any install script executes.
+
+Also: triage your machine in 30 seconds when an attack hits the news, block malicious installs at the command line, or wire it into CI — same IoC database, one command, no signup.
 
 [![npm](https://img.shields.io/npm/v/patient-zero?style=flat-square)](https://www.npmjs.com/package/patient-zero)
 [![downloads](https://img.shields.io/npm/dw/patient-zero?style=flat-square)](https://www.npmjs.com/package/patient-zero)
@@ -39,9 +41,24 @@ Scanned 1 lockfiles · 234 processes · 2 MCP configs · 0 repos · 0 paths chec
 
 </details>
 
-## Three ways to use it
+## Four ways to use it
 
-### 1. On-demand triage — when the news breaks
+### 1. Protect your AI agent — the one prompt it can't skip
+
+```sh
+npx patient-zero@latest protect
+```
+
+Detects Claude Code and Cursor on your machine and installs patient-zero as an agent hook (Claude Code `PreToolUse`, Cursor `beforeShellExecution`). From then on, every install command the agent runs — `npm`/`pnpm`/`yarn`/`bun`/`npx` and `pip`/`uv`/`poetry`/`pipx` — is intercepted and checked **before it executes**, even when the agent runs in auto mode with permission prompts disabled:
+
+- **Known IoCs** — the same attack-campaign database all other modes use.
+- **Hallucinated packages** — the requested package doesn't exist on the registry: the exact pattern [slopsquatting](https://www.endorlabs.com/learn/slopsquatting-when-ai-agents-hallucinate-malicious-packages) attacks exploit. Research on LLM package hallucination found ~19.7% of AI-recommended packages don't exist.
+- **Lookalike names** — one edit away from a popular package (`lodahs`, `expressjs`).
+- **Release cooldown** — the version was published under 48h ago. Most supply-chain malware is caught within days of upload; cooldown users were protected from the Shai-Hulud campaigns before public advisories existed. patient-zero suggests the previous stable version, and the agent installs that instead.
+
+Denials return a machine-readable reason, so the agent self-corrects ("install `chalk@5.6.2` instead") rather than just failing. Guards fail open — a broken network or scanner bug never bricks your dev loop. Remove anytime with `npx patient-zero protect --remove`.
+
+### 2. On-demand triage — when the news breaks
 
 ```sh
 npx patient-zero@latest
@@ -49,7 +66,7 @@ npx patient-zero@latest
 
 No global install, no signup, no config. Runs against the current directory. Use this when chalk / axios / the latest Shai-Hulud variant hits Hacker News and you need a fast yes/no on whether your machine is affected.
 
-### 2. Install-time blocking — catch malware *before* it runs
+### 3. Install-time blocking — catch malware *before* it runs
 
 ```sh
 npx patient-zero@latest install <package>
@@ -57,7 +74,7 @@ npx patient-zero@latest install <package>
 
 Resolves the proposed install tree in a sandboxed temp directory, cross-references every transitive dependency against the IoC database, and refuses to proceed if any indicator matches. **Postinstall scripts never execute.** This is the most valuable single feature for the agent era — your AI agent installs things on your behalf; you don't see every install; this catches it.
 
-### 3. Continuous CI — every commit, every PR
+### 4. Continuous CI — every commit, every PR
 
 ```yaml
 - uses: 0xSteph/patient-zero@v0.2
@@ -196,7 +213,7 @@ A new attack family also needs an entry in `attack_families` and at minimum one 
 | Snyk Open Source         | partial          | ✗                  | ✓              | ✗                    | ✗         | ✗           | ✗ (signup)      |
 | [Cobenian/shai-hulud-detect](https://github.com/Cobenian/shai-hulud-detect) | ✓ | ✗ | ✗ | partial | ✗ | ✓ (1 family) | ✓ |
 
-The lockfile-malware row got crowded after Dependabot added native malware alerts in March 2026. patient-zero's bet for differentiation is on the columns most competitors leave empty: **MCP / process / local persistence scanning, plus install-time blocking with an open IoC database**.
+The lockfile-malware row got crowded after Dependabot added native malware alerts in March 2026. patient-zero's bet for differentiation is on the columns most competitors leave empty: **agent-hook protection (Claude Code / Cursor installs checked in-flight), slopsquat + cooldown heuristics, MCP / process / local persistence scanning, plus install-time blocking with an open IoC database**.
 
 We work alongside the continuous tools — not as a replacement. If you have Snyk in CI, keep it. patient-zero is what you reach for the moment a new supply-chain attack disclosure hits the news, and what you wire into `npm install` to catch the attack before postinstall runs.
 

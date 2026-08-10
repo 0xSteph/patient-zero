@@ -17,6 +17,9 @@ import { scan as scanProcesses } from '../src/scanners/processes.js';
 import { scan as scanGithub } from '../src/scanners/github.js';
 import { runInterceptor } from '../src/install-interceptor.js';
 import { installHook, removeHook, detectHookSystem } from '../src/hook-installer.js';
+import { protectAgents, unprotectAgents, detectAgents } from '../src/agent-hook-installer.js';
+import { runGuard } from '../src/agent-guard.js';
+import { runHeuristics } from '../src/heuristics.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG_PATH = path.resolve(HERE, '../package.json');
@@ -56,6 +59,8 @@ program
   .description('Resolve a proposed install, scan it against IoCs, block on hit')
   .option('--pm <name>', 'force package manager: npm|pnpm|yarn (default: detect from lockfile)')
   .option('--offline', 'use bundled IoC snapshot; never reach the network')
+  .option('--no-heuristics', 'skip slopsquat/cooldown heuristics, IoC matching only')
+  .option('--cooldown <hours>', 'cooldown window for newly published versions', '48')
   .option('--json', 'emit JSON output')
   .option('--debug', 'verbose error output')
   .action(runInstall);
@@ -68,6 +73,27 @@ program
   .option('--remove', 'remove the patient-zero hook instead of installing it')
   .option('--json', 'emit JSON output')
   .action(runInstallHook);
+
+// protect subcommand (v0.3): wire the guard into AI coding agents.
+program
+  .command('protect')
+  .description('Protect AI coding agents (Claude Code, Cursor): scan every package install the agent runs')
+  .option('--agent <name...>', 'restrict to specific agents: claude-code|cursor (default: all detected)')
+  .option('--project', 'install into the project config (./.claude, ./.cursor) instead of the user config')
+  .option('--remove', 'remove previously installed agent guards')
+  .option('--json', 'emit JSON output')
+  .action(runProtect);
+
+// guard subcommand (v0.3): the runtime invoked by agent hooks. Reads the
+// hook payload on stdin, prints the agent's expected decision JSON.
+program
+  .command('guard', { hidden: true })
+  .description('(internal) evaluate an agent hook payload from stdin — used by `patient-zero protect`')
+  .option('--agent <name>', 'hook payload dialect: claude-code|cursor', 'claude-code')
+  .option('--offline', 'use bundled IoC snapshot; skip registry heuristics')
+  .option('--no-heuristics', 'skip slopsquat/cooldown heuristics, IoC matching only')
+  .option('--cooldown <hours>', 'cooldown window for newly published versions', '48')
+  .action(runGuardCommand);
 
 program.parseAsync(process.argv).catch((err) => {
   process.stderr.write(pc.red(`patient-zero: fatal: ${err.message}\n`));
@@ -192,6 +218,42 @@ async function runInstallImpl(pkgs, opts) {
   const { iocs, source: iocSource } = await loadIocs({ offline: Boolean(opts.offline) });
   spinner?.succeed(`IoC database loaded (${iocSource}, ${iocs.attack_family_count} families · ${iocs.indicator_count} indicators)`);
 
+  // Heuristic pre-checks on the requested packages (slopsquat lookalikes,
+  // nonexistent names, release cooldown). Runs before tree resolution so a
+  // hallucinated package is caught even though resolution would fail anyway.
+  let heuristicFindings = [];
+  if (opts.heuristics !== false) {
+    const { parsePackageSpec } = await import('../src/heuristics.js');
+    const parsed = pkgs.map((p) => parsePackageSpec(p, 'npm'));
+    const h = await runHeuristics(parsed, 'npm', {
+      offline: Boolean(opts.offline),
+      cooldownHours: parseFloat(opts.cooldown) || 48,
+    });
+    heuristicFindings = h.findings;
+    const blocking = heuristicFindings.filter((f) => f.severity === 'high' || f.severity === 'critical');
+    if (blocking.length > 0) {
+      if (opts.json) {
+        process.stdout.write(JSON.stringify({
+          mode: 'install-interceptor',
+          blockedBy: 'heuristics',
+          heuristicFindings,
+          passedThrough: false,
+          exitCode: EXIT_FINDING,
+        }, null, 2) + '\n');
+      } else {
+        process.stdout.write('\n' + pc.bgRed(pc.white(pc.bold(`  ❌  patient-zero blocked the install (heuristics)  `))) + '\n\n');
+        for (const f of blocking) {
+          process.stdout.write(`  ${pc.bold(f.severity.toUpperCase())} · ${f.rule}\n`);
+          process.stdout.write(`     ${f.message}\n`);
+          if (f.suggestion) process.stdout.write(`     ${pc.bold('Next step:')} ${f.suggestion}\n`);
+          process.stdout.write('\n');
+        }
+        process.stdout.write(pc.dim(`To skip these checks: re-run with --no-heuristics. IoC matching still applies.\n\n`));
+      }
+      process.exit(EXIT_FINDING);
+    }
+  }
+
   const resolveSpinner = useSpinners ? ora({ text: `Resolving install tree for ${pkgs.join(', ')}…`, color: 'cyan' }).start() : null;
 
   const result = await runInterceptor({
@@ -286,4 +348,72 @@ async function runInstallHook(opts) {
     process.stderr.write(pc.red(`patient-zero install-hook: ${err.message}\n`));
     process.exit(EXIT_ERROR);
   }
+}
+
+// ---------- protect (new v0.3) ----------
+
+async function runProtect(opts) {
+  try {
+    if (opts.remove) {
+      const result = await unprotectAgents({});
+      if (opts.json) {
+        process.stdout.write(JSON.stringify({ mode: 'protect', action: 'remove', ...result }, null, 2) + '\n');
+      } else if (result.removed.length === 0) {
+        process.stdout.write(pc.dim('No patient-zero agent guards found to remove.\n'));
+      } else {
+        process.stdout.write(pc.green('✅  Removed patient-zero agent guard:\n'));
+        for (const r of result.removed) process.stdout.write(`     ${r.agent}: ${r.path}\n`);
+      }
+      process.exit(EXIT_CLEAN);
+    }
+
+    const scope = opts.project ? 'project' : 'user';
+    const result = await protectAgents({ agents: opts.agent, scope });
+
+    if (opts.json) {
+      process.stdout.write(JSON.stringify({ mode: 'protect', action: 'install', scope, ...result }, null, 2) + '\n');
+      process.exit(EXIT_CLEAN);
+    }
+
+    if (result.installed.length === 0) {
+      process.stdout.write(pc.yellow('No supported AI agents detected (looked for Claude Code and Cursor).\n'));
+      process.stdout.write(pc.dim('Force one explicitly: npx patient-zero protect --agent claude-code\n'));
+      process.exit(EXIT_CLEAN);
+    }
+
+    process.stdout.write(pc.green(pc.bold('🛡  Agent guard installed. Your AI agent can no longer install packages unchecked.\n\n')));
+    for (const r of result.installed) {
+      process.stdout.write(`   ${r.agent === 'claude-code' ? 'Claude Code' : 'Cursor'} — ${r.action}: ${r.path}\n`);
+    }
+    process.stdout.write('\n');
+    process.stdout.write(pc.dim('   Every install command the agent runs (npm/pnpm/yarn/bun/pip/uv/poetry) is now\n'));
+    process.stdout.write(pc.dim('   checked against the IoC database, the slopsquat lookalike list, and a 48h\n'));
+    process.stdout.write(pc.dim('   release-cooldown window — before any package script executes.\n'));
+    process.stdout.write(pc.dim(`   To remove: ${pc.bold('npx patient-zero protect --remove')}\n`));
+    process.exit(EXIT_CLEAN);
+  } catch (err) {
+    process.stderr.write(pc.red(`patient-zero protect: ${err.message}\n`));
+    process.exit(EXIT_ERROR);
+  }
+}
+
+// ---------- guard (new v0.3, internal) ----------
+
+async function runGuardCommand(opts) {
+  // Read the entire hook payload from stdin.
+  let stdinText = '';
+  try {
+    for await (const chunk of process.stdin) stdinText += chunk;
+  } catch {
+    // fall through with what we have
+  }
+
+  const result = await runGuard(opts.agent, stdinText, {
+    offline: Boolean(opts.offline),
+    noHeuristics: opts.heuristics === false,
+    cooldownHours: parseFloat(opts.cooldown) || 48,
+  });
+
+  process.stdout.write(result.output + '\n');
+  process.exit(result.exitCode);
 }
